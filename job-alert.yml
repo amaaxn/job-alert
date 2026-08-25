@@ -1,0 +1,45 @@
+name: New-Grad Job Alert
+
+on:
+  schedule:
+    # Every 30 minutes — matches how often the upstream listings.json
+    # itself gets refreshed. GitHub may delay scheduled runs slightly
+    # under load; that's fine here.
+    - cron: "*/30 * * * *"
+  workflow_dispatch: {} # lets you trigger a run manually from the Actions tab
+
+permissions:
+  contents: write # needed to commit the updated seen_ids.json back
+
+concurrency:
+  group: job-alert
+  cancel-in-progress: false
+
+jobs:
+  check-listings:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run job monitor
+        env:
+          GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
+          JOB_CATEGORIES: ${{ vars.JOB_CATEGORIES }}
+          JOB_TITLE_KEYWORDS: ${{ vars.JOB_TITLE_KEYWORDS }}
+          JOB_LOCATION_KEYWORDS: ${{ vars.JOB_LOCATION_KEYWORDS }}
+          JOB_MATCH_ANY: ${{ vars.JOB_MATCH_ANY }}
+        run: python job_monitor.py
+
+      - name: Commit updated seen_ids.json
+        run: |
+          git config user.name "job-monitor-bot"
+          git config user.email "actions@github.com"
+          git add seen_ids.json
+          git diff --staged --quiet || git commit -m "Update seen listings"
+          git push
