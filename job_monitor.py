@@ -73,7 +73,7 @@ STATE_ALIASES = {
 }
 
 # Ignore listings older than this (guards against a stale active=true flip).
-MAX_AGE_HOURS = 48
+MAX_AGE_HOURS = 72
 
 # ---------------------------------------------------------------------------
 
@@ -187,7 +187,7 @@ def send_email(body: str, count: int) -> None:
     msg = MIMEMultipart()
     msg["From"] = sender
     msg["To"] = to
-    msg["Subject"] = f"{count} new grad posting(s) match your filters"
+    msg["Subject"] = f"[GITHUB JOB TRACKER] {count} new grad posting(s) match your filters"
     msg.attach(MIMEText(body, "plain"))
 
     context = ssl.create_default_context()
